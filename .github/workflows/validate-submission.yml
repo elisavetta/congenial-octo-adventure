@@ -1,0 +1,67 @@
+name: Проверка заявки студента
+
+on:
+  pull_request:
+    paths:
+      - 'submissions/**'
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Получить код
+        uses: actions/checkout@v3
+
+      - name: 🔍 Проверить структуру заявки
+        run: |
+          echo "Проверяем структуру заявки..."
+          
+          # Проверяем обязательные поля в описании PR
+          REQUIRED_FIELDS=("Полное имя:" "Ваш репозиторий с проектом:" "Название проекта:")
+          PR_BODY="${{ github.event.pull_request.body }}"
+          
+          echo "=== Найденные поля в заявке ==="
+          for field in "${REQUIRED_FIELDS[@]}"; do
+            if echo "$PR_BODY" | grep -q "$field"; then
+              echo "✅ $field"
+            else
+              echo "❌ Отсутствует: $field"
+              echo "Пожалуйста, добавьте '$field' в описание PR"
+              exit 1
+            fi
+          done
+          
+          echo ""
+          echo "✅ Все обязательные поля присутствуют"
+
+      - name: 🏷️ Автоматически проставить лейблы
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const title = context.payload.pull_request.title;
+            
+            // Добавляем лейблы в зависимости от типа заявки
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              labels: ['новая-заявка', 'ожидает-ревью']
+            });
+            
+            console.log('Лейблы добавлены');
+
+      - name: 📊 Создать отчет о проверке
+        run: |
+          echo "## Отчет о проверке заявки" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Проверка структуры:** ПРОЙДЕНА" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Обязательные поля:** все присутствуют" >> $GITHUB_STEP_SUMMARY
+          echo "🏷️ **Лейблы:** добавлены 'новая-заявка', 'ожидает-ревью'" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Что дальше?**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Менторы увидят вашу заявку в списке PR" >> $GITHUB_STEP_SUMMARY
+          echo "2. Ревью начнется в течение 48 часов" >> $GITHUB_STEP_SUMMARY
+          echo "3. Следите за комментариями менторов" >> $GITHUB_STEP_SUMMARY

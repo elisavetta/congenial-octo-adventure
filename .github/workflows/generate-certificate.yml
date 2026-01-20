@@ -1,0 +1,90 @@
+name: Генерация сертификата
+
+on:
+  issues:
+    types: [closed]
+  pull_request:
+    types: [closed]
+
+jobs:
+  certificate:
+    if: |
+      github.event_name == 'pull_request' && 
+      github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'одобрено')
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📝 Генерировать сертификат
+        env:
+          STUDENT_NAME: "${{ github.event.pull_request.user.login }}"
+          PROJECT_NAME: "${{ github.event.pull_request.title }}"
+          MERGE_DATE: "${{ github.event.pull_request.merged_at }}"
+        run: |
+          echo "Генерация сертификата для $STUDENT_NAME"
+          
+          # Создаем папку для сертификатов
+          mkdir -p certificates/$STUDENT_NAME
+          
+          # Создаем простой сертификат в формате markdown
+          cat > certificates/$STUDENT_NAME/CERTIFICATE.md << CERTEOF
+# 🏆 Сертификат об успешном завершении проекта
+
+<div align="center">
+
+## СЕРТИФИКАТ
+### о успешном завершении проекта
+
+**Выдан:** $STUDENT_NAME  
+**За проект:** $PROJECT_NAME  
+**Дата завершения:** $MERGE_DATE  
+
+---
+
+### Подтверждается, что
+**$STUDENT_NAME** успешно завершил проект **"$PROJECT_NAME"** под руководством менторов программы.
+
+### Менторы проекта:
+- @MENTOR1_GITHUB
+- @MENTOR2_GITHUB
+
+### Навыки, продемонстрированные в проекте:
+- Разработка полноценного приложения
+- Следование best practices
+- Профессиональное ревью кода
+- Итеративное улучшение по фидбэку
+
+---
+
+**Ссылка на проект в портфолио:**  
+https://github.com/${{ github.repository }}/tree/main/portfolio/$STUDENT_NAME
+
+**Ссылка на исходный код:**  
+${{ github.event.pull_request.body }}
+
+---
+
+<div style="margin-top: 50px;">
+
+**Подпись менторов:**  
+_____________________  
+@MENTOR1_GITHUB  
+
+_____________________  
+@MENTOR2_GITHUB  
+
+</div>
+
+</div>
+
+*Этот сертификат подтверждает успешное завершение проекта в рамках программы менторства.*
+CERTEOF
+          
+          echo "Сертификат создан: certificates/$STUDENT_NAME/CERTIFICATE.md"
+
+      - name: 📤 Зафиксировать сертификат
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Добавлен сертификат для ${{ github.event.pull_request.user.login }}"
+          file_pattern: 'certificates/**'
+          commit_user_name: 'GitHub Actions'
+          commit_user_email: 'actions@github.com'
