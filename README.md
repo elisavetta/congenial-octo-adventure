@@ -74,3 +74,13 @@
 ### Готовы начать?
 [Создайте свою первую заявку!](STUDENT_GUIDE.md)
 
+### Для студентов:
+- [Идеи для проектов](curriculum/resources/PROJECT_IDEAS.md) - вдохновение
+- [Руководство по Git](curriculum/resources/GIT_GUIDE.md) - работа с Git
+- [FAQ](curriculum/resources/FAQ.md) - ответы на вопросы
+
+### Для технических вопросов:
+1. Создайте Issue в репозитории
+2. Отметьте @elisavetta
+3. Опишите проблему подробно
+
